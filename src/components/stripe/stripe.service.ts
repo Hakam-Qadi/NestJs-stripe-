@@ -38,7 +38,6 @@ export class StripeService {
         }
     }
 
-
     async createCustomer(dto: CreateCustomerDto) {
         return this.stripe.customers.create({
             email: dto.email,
@@ -50,5 +49,11 @@ export class StripeService {
         return this.stripe.paymentIntents.confirm(paymentIntentId, {
             payment_method: 'pm_card_visa', // Stripe test Visa card
         });
+    }
+
+    async refundPayment(paymentIntentId: string) {
+        return this.stripe.refunds.create({
+            payment_intent: paymentIntentId,
+        })
     }
 }

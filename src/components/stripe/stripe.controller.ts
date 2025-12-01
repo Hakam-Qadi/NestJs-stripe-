@@ -1,4 +1,4 @@
-import { Body, Controller, Headers, Inject, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Headers, Inject, Post, Query, Req, Res } from '@nestjs/common';
 import { StripeService } from './stripe.service';
 import { serviceConfig } from 'src/config/env.config';
 import Stripe from 'stripe';
@@ -63,6 +63,17 @@ export class StripeController {
         return {
             message: 'Customer created successfully',
             customer,
+        };
+    }
+
+    @Post('refund')
+    async refundPayment(@Query('paymentId') paymentId: string) {
+        const refund = await this.stripeService.refundPayment(paymentId);
+
+        return {
+            message: 'Refund payment successfully',
+            amount: refund.amount,
+            currency: refund.currency,
         };
     }
 }
