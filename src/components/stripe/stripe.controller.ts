@@ -16,12 +16,8 @@ export class StripeController {
     ) { }
 
     @Post('payment')
-    async createIntent(@Body() body: CreatePaymentDto) {
-        return await this.stripeService.createPaymentIntent(
-            body.amount,
-            body.currency ?? 'usd',
-            body.customer,
-        );
+    async createIntent(@Body() dto: CreatePaymentDto) {
+        return await this.stripeService.createPaymentIntent(dto);
     }
 
     @Post('webhook')
@@ -76,4 +72,17 @@ export class StripeController {
             currency: refund.currency,
         };
     }
+
+    @Post('attach')
+    async attachCard(@Body() dto: CreateCustomerDto) {
+        const paymentMethod = await this.stripeService.attachCardToCustomer(
+            dto
+        );
+
+        return {
+            message: "Card attached successfully",
+            paymentMethod,
+        };
+    }
+
 }

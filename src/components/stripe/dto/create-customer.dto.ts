@@ -3,6 +3,19 @@ import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-
 
 export class CreateCustomerDto {
     @ApiProperty({
+        example: 'cus_TWY5VbLU5rfcLU',
+    })
+    @IsString()
+    customerId: string;
+
+    @ApiProperty({
+        // example: 'pm_1SZUubE9Ea2k0MpMFpZiBSgl',
+        example: 'pm_card_visa',
+    })
+    @IsString()
+    paymentMethodId: string;
+
+    @ApiProperty({
         example: 'john@example.com',
     })
     @IsEmail({}, { message: 'Invalid email format' })
