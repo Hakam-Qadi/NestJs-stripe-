@@ -1,12 +1,13 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
+import { CreateCustomerDto } from './dto/create-customer.dto';
 
 @Injectable()
 export class StripeService {
 
     constructor(@Inject('STRIPE_CLIENT') private stripe: Stripe) { }
 
-    async createPaymentIntent(amount: number, currency: string, metadata = {}) {
+    async createPaymentIntent(amount: number, currency: string, customer: string, metadata = {}) {
         try {
             if (currency === 'jod' && amount < 200) {
                 throw new BadRequestException(
@@ -15,6 +16,7 @@ export class StripeService {
             }
 
             const intent = await this.stripe.paymentIntents.create({
+                customer,
                 amount,
                 currency,
                 metadata,
@@ -37,8 +39,11 @@ export class StripeService {
     }
 
 
-    async createCustomer(email?: string) {
-        return this.stripe.customers.create({ email });
+    async createCustomer(dto: CreateCustomerDto) {
+        return this.stripe.customers.create({
+            email: dto.email,
+            name: dto.name
+        });
     }
 
     async confirmPaymentIntent(paymentIntentId: string) {

@@ -5,6 +5,7 @@ import Stripe from 'stripe';
 import { Request, Response } from 'express';
 import { ConfirmPaymentDto } from './dto/confirm-payment.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { CreateCustomerDto } from './dto/create-customer.dto';
 
 @Controller('stripe')
 export class StripeController {
@@ -18,7 +19,9 @@ export class StripeController {
     async createIntent(@Body() body: CreatePaymentDto) {
         return await this.stripeService.createPaymentIntent(
             body.amount,
-            body.currency ?? 'usd',);
+            body.currency ?? 'usd',
+            body.customer,
+        );
     }
 
     @Post('webhook')
@@ -51,6 +54,15 @@ export class StripeController {
         return {
             message: 'PaymentIntent confirmed',
             paymentIntent: intent,
+        };
+    }
+
+    @Post('customer')
+    async createCustomer(@Body() dto: CreateCustomerDto) {
+        const customer = await this.stripeService.createCustomer(dto);
+        return {
+            message: 'Customer created successfully',
+            customer,
         };
     }
 }
