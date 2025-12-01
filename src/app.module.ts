@@ -4,6 +4,7 @@ import { AuthModule } from './components/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from 'prisma/prisma.module';
 import { BodyParserMiddleware } from './common/middlewares/body-parser.middleware';
+import { UsersModule } from './components/users/users.module';
 
 @Module({
   imports: [
@@ -12,7 +13,8 @@ import { BodyParserMiddleware } from './common/middlewares/body-parser.middlewar
     }),
     StripeModule,
     AuthModule,
-    PrismaModule
+    PrismaModule,
+    UsersModule
   ],
   controllers: [],
   providers: [],

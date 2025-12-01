@@ -6,7 +6,7 @@ export class CreateCustomerDto {
         example: 'cus_TWY5VbLU5rfcLU',
     })
     @IsString()
-    customerId: string;
+    customerId?: string;
 
     @ApiProperty({
         // example: 'pm_1SZUubE9Ea2k0MpMFpZiBSgl',

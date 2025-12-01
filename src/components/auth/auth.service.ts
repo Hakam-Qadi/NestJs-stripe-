@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { RegisterDto } from '../../components/auth/dto/Register.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { serviceConfig } from '../../config/env.config';
+import { StripeService } from '../stripe/stripe.service';
 
 
 @Injectable()
@@ -11,6 +12,7 @@ export class AuthService {
     constructor(
         private prisma: PrismaService,
         private jwtService: JwtService,
+        private stripeService: StripeService,
     ) { }
 
     async validateUser(email: string, password: string) {
@@ -133,6 +135,10 @@ export class AuthService {
             },
         });
         const tokens = await this.generateTokens(user);
+
+        if (tokens) {
+            await this.stripeService.createCustomer(dto)
+        }
 
         return {
             token: tokens.token,

@@ -43,4 +43,11 @@ export class RegisterDto {
     @Matches(/(?=.*\d)/, { message: 'Password must contain at least one number' })
     @Matches(/(?=.*[@$!%*?&])/, { message: 'Password must contain at least one special character (@$!%*?&)' })
     password: string;
+
+    @ApiProperty({
+        // example: 'pm_1SZUubE9Ea2k0MpMFpZiBSgl',
+        example: 'pm_card_visa',
+    })
+    @IsString()
+    paymentMethodId: string;
 }

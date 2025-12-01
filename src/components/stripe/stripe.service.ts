@@ -64,11 +64,11 @@ export class StripeService {
             // Attach card
             const paymentMethod = await this.stripe.paymentMethods.attach(
                 dto.paymentMethodId,
-                { customer: dto.customerId }
+                { customer: dto.customerId || "" }
             );
 
             // Set as default
-            await this.stripe.customers.update(dto.customerId, {
+            await this.stripe.customers.update(dto.customerId || "", {
                 invoice_settings: { default_payment_method: dto.paymentMethodId },
             });
 
