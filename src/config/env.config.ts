@@ -18,4 +18,10 @@ export const serviceConfig = {
         name: envVars.DB_NAME,
         url: envVars.DB_URL,
     },
+    stripe: {
+        secretKey: envVars.STRIPE_SECRET_KEY,
+        publishableKey: envVars.STRIPE_PUBLISHABLE_KEY,
+        webhookKey: envVars.STRIPE_WEBHOOK_SECRET,
+        apiVersion: envVars.API_VERSION
+    }
 };
