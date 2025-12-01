@@ -3,8 +3,10 @@ import { StripeService } from './stripe.service';
 import { StripeController } from './stripe.controller';
 import Stripe from 'stripe';
 import { serviceConfig } from 'src/config/env.config';
+import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
+  imports: [PaymentsModule],
   providers: [
     {
       provide: 'STRIPE_CLIENT',
@@ -14,7 +16,7 @@ import { serviceConfig } from 'src/config/env.config';
         });
       },
     },
-    StripeService
+    StripeService,
   ],
   controllers: [StripeController],
   exports: ['STRIPE_CLIENT'],

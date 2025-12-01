@@ -6,12 +6,16 @@ import { Request, Response } from 'express';
 import { ConfirmPaymentDto } from './dto/confirm-payment.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { CreateCustomerDto } from './dto/create-customer.dto';
+import { PaymentsService } from '../payments/payments.service';
+import { PrismaService } from 'prisma/prisma.service';
 
 @Controller('stripe')
 export class StripeController {
 
     constructor(
         private stripeService: StripeService,
+        private paymentsService: PaymentsService,
+        private readonly prisma: PrismaService,
         @Inject('STRIPE_CLIENT') private stripe: Stripe
     ) { }
 
@@ -47,6 +51,10 @@ export class StripeController {
     @Post('confirm')
     async confirm(@Body() body: ConfirmPaymentDto) {
         const intent = await this.stripeService.confirmPaymentIntent(body.paymentIntentId);
+
+        if (intent) {
+            await this.paymentsService.createPaymentsAtDb(intent)
+        }
         return {
             message: 'PaymentIntent confirmed',
             paymentIntent: intent,

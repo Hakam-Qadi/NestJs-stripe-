@@ -16,13 +16,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
   id          String  @id @default(uuid()) @map("id")
   name        String?
   email       String  @unique
   password    String
   refreshHash String?
+
+  payments Payment[]
+  stripeCustomerId  String?  @unique
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model Payment {
+  id           String  @id @default(uuid())
+  userId       String
+  amount       Decimal
+  currency     String
+  clientSecret String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

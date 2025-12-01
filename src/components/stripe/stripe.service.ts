@@ -2,11 +2,15 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { PrismaService } from 'prisma/prisma.service';
 
 @Injectable()
 export class StripeService {
 
-    constructor(@Inject('STRIPE_CLIENT') private stripe: Stripe) { }
+    constructor(
+        @Inject('STRIPE_CLIENT') private stripe: Stripe,
+        private readonly prisma: PrismaService,
+    ) { }
 
     async createPaymentIntent(dto: CreatePaymentDto, metadata = {}) {
         try {
@@ -40,11 +44,17 @@ export class StripeService {
     }
 
     async createCustomer(dto: CreateCustomerDto) {
-        return this.stripe.customers.create({
+        const customer = await this.stripe.customers.create({
             email: dto.email,
             name: dto.name,
             payment_method: dto.paymentMethodId
         });
+
+        await this.prisma.user.update({
+            where: { email: dto.email },
+            data: { stripeCustomerId: customer.id }
+        });
+        return customer
     }
 
     async confirmPaymentIntent(paymentIntentId: string) {
