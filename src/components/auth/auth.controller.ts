@@ -4,7 +4,7 @@ import { RegisterDto } from '../../components/auth/dto/Register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ApiBody } from '@nestjs/swagger';
 import { Request, Response } from 'express';
-import { serviceConfig } from 'src/config/env.config';
+import { serviceConfig } from '../../config/env.config';
 import { AuthService } from './auth.service';
 
 @Controller('auth')

@@ -2,7 +2,7 @@ import { ConflictException, ForbiddenException, Injectable, UnauthorizedExceptio
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from '../../components/auth/dto/Register.dto';
-import { PrismaService } from 'prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { serviceConfig } from '../../config/env.config';
 import { StripeService } from '../stripe/stripe.service';
 

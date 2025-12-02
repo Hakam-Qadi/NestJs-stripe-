@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { StripeService } from './stripe.service';
 import { StripeController } from './stripe.controller';
 import Stripe from 'stripe';
-import { serviceConfig } from 'src/config/env.config';
+import { serviceConfig } from '../../config/env.config';
 import { PaymentsModule } from '../payments/payments.module';
+import { StripeWebhookController } from './stripe.webhook.controller';
 
 @Module({
   imports: [PaymentsModule],
@@ -18,7 +19,7 @@ import { PaymentsModule } from '../payments/payments.module';
     },
     StripeService,
   ],
-  controllers: [StripeController],
+  controllers: [StripeController, StripeWebhookController],
   exports: ['STRIPE_CLIENT'],
 })
 export class StripeModule { }

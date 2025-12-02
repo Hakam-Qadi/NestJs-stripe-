@@ -2,7 +2,8 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { PrismaService } from 'prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { AttachCardDto } from './dto/attach-card.dto';
 
 @Injectable()
 export class StripeService {
@@ -14,12 +15,14 @@ export class StripeService {
 
     async createPaymentIntent(dto: CreatePaymentDto, metadata = {}) {
         try {
+            // check the currency and its min valid amount
             if (dto.currency === 'jod' && dto.amount < 200) {
                 throw new BadRequestException(
                     'Minimum charge for JOD is 200 fils (0.200 JOD)'
                 );
             }
 
+            // creating payment intent
             const intent = await this.stripe.paymentIntents.create({
                 customer: dto.customer,
                 amount: dto.amount,
@@ -30,12 +33,13 @@ export class StripeService {
                     allow_redirects: 'never',
                 },
             });
+            // console.log("INTENT (PAYMENT) :::::::: ", intent);
 
             return {
                 id: intent.id,
-                amount: intent.amount,
-                currency: intent.currency,
-                clientSecret: intent.client_secret
+                clientSecret: intent.client_secret,
+                amount: intent.amount, // optional
+                currency: intent.currency, // optional
             }
         } catch (error) {
             console.error('Stripe Error: createPaymentIntent', error);
@@ -59,7 +63,8 @@ export class StripeService {
 
     async confirmPaymentIntent(paymentIntentId: string) {
         return this.stripe.paymentIntents.confirm(paymentIntentId, {
-            payment_method: 'pm_card_visa', // Stripe test Visa card
+            // payment_method: 'pm_card_visa', // Stripe test Visa card
+            payment_method: "pm_card_chargeDeclined" // Stripe test decline Visa card
         });
     }
 
@@ -69,7 +74,7 @@ export class StripeService {
         })
     }
 
-    async attachCardToCustomer(dto: CreateCustomerDto) {
+    async attachCardToCustomer(dto: AttachCardDto) {
         try {
             // Attach card
             const paymentMethod = await this.stripe.paymentMethods.attach(

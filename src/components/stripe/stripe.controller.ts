@@ -1,13 +1,11 @@
 import { Body, Controller, Headers, Inject, Post, Query, Req, Res } from '@nestjs/common';
 import { StripeService } from './stripe.service';
-import { serviceConfig } from 'src/config/env.config';
 import Stripe from 'stripe';
-import { Request, Response } from 'express';
 import { ConfirmPaymentDto } from './dto/confirm-payment.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { PaymentsService } from '../payments/payments.service';
-import { PrismaService } from 'prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 @Controller('stripe')
 export class StripeController {
@@ -19,35 +17,13 @@ export class StripeController {
         @Inject('STRIPE_CLIENT') private stripe: Stripe
     ) { }
 
+    // Create payment
     @Post('payment')
     async createIntent(@Body() dto: CreatePaymentDto) {
         return await this.stripeService.createPaymentIntent(dto);
     }
 
-    @Post('webhook')
-    async handleWebhook(@Req() req: Request, @Res() res: Response, @Headers('stripe-signature') sigHeader: string) {
-        const webhookSecret = serviceConfig.stripe.webhookKey
-        let event: Stripe.Event;
-
-        try {
-            event = this.stripe.webhooks.constructEvent(req.body, sigHeader, webhookSecret);
-        } catch (err) {
-            console.error('Webhook signature verification failed.', err);
-            return res.status(400).send(`Webhook Error: ${err.message}`);
-        }
-
-        // Handle event types
-        switch (event.type) {
-            case 'payment_intent.succeeded':
-                const paymentIntent = event.data.object as Stripe.PaymentIntent;
-                console.log('PaymentIntent was successful!', paymentIntent.id);
-                break;
-            default:
-                console.log(`Unhandled event type ${event.type}`);
-        }
-        res.json({ received: true });
-    }
-
+    // Confirm payments
     @Post('confirm')
     async confirm(@Body() body: ConfirmPaymentDto) {
         const intent = await this.stripeService.confirmPaymentIntent(body.paymentIntentId);

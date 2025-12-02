@@ -7,7 +7,10 @@ import { swaggerConfig } from './config/swagger.config';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+  });
+
 
   // required to send tokens with req.cookies 
   app.use(cookieParser());
