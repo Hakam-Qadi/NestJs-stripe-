@@ -12,7 +12,7 @@ export class CreatePaymentDto {
     @IsString()
     currency?: string = 'usd';
 
-    @ApiProperty({ example: 'cus_TWY5VbLU5rfcLU' })
+    @ApiProperty({ example: 'cus_TWaXQkywA4RZrO' })
     @IsString()
     customer: string;
 }

@@ -3,7 +3,7 @@ import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-
 
 export class CreateCustomerDto {
     @ApiProperty({
-        example: 'cus_TWY5VbLU5rfcLU',
+        example: 'cus_TWaXQkywA4RZrO',
     })
     @IsString()
     customerId?: string;
