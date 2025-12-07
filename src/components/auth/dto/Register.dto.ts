@@ -7,47 +7,48 @@ import {
     MaxLength,
     Matches
 } from "class-validator";
+import { MessageEnum } from "../../../common/enums/message.enum";
 
 export class RegisterDto {
 
 
     @ApiProperty({
-        example: 'John Doe',
+        example: MessageEnum.swaggerExample.NAME,
         minLength: 2,
         maxLength: 50,
     })
     @IsString()
     @IsNotEmpty()
-    @MinLength(2, { message: 'Name must be at least 2 characters long' })
-    @MaxLength(50, { message: 'Name must be less than 50 characters' })
+    @MinLength(2, { message: MessageEnum.swaggerExample.VALIDATION.NAME_MIN_LENGTH })
+    @MaxLength(50, { message: MessageEnum.swaggerExample.VALIDATION.NAME_MAX_LENGTH })
     name: string;
 
     @ApiProperty({
-        example: 'john@example.com',
+        example: MessageEnum.swaggerExample.EMAIL,
         uniqueItems: true,
     })
-    @IsEmail({}, { message: 'Invalid email format' })
+    @IsEmail({}, { message: MessageEnum.swaggerExample.VALIDATION.EMAIL })
     @IsNotEmpty()
     email: string;
 
     @ApiProperty({
-        example: 'StrongPass@123',
+        example: MessageEnum.swaggerExample.PASSWORD,
         minLength: 8,
     })
     @IsString()
     @IsNotEmpty()
-    @MinLength(8, { message: 'Password must be at least 8 characters long' })
-    @MaxLength(100, { message: 'Password must be less than 100 characters' })
-    @Matches(/(?=.*[A-Z])/, { message: 'Password must contain at least one uppercase letter' })
-    @Matches(/(?=.*[a-z])/, { message: 'Password must contain at least one lowercase letter' })
-    @Matches(/(?=.*\d)/, { message: 'Password must contain at least one number' })
-    @Matches(/(?=.*[@$!%*?&])/, { message: 'Password must contain at least one special character (@$!%*?&)' })
+    @MinLength(8, { message: MessageEnum.swaggerExample.VALIDATION.PASSWORD_MIN_LENGTH })
+    @MaxLength(100, { message: MessageEnum.swaggerExample.VALIDATION.PASSWORD_MAX_LENGTH })
+    @Matches(/(?=.*[A-Z])/, { message: MessageEnum.swaggerExample.VALIDATION.PASSWORD_UPPERCASE })
+    @Matches(/(?=.*[a-z])/, { message: MessageEnum.swaggerExample.VALIDATION.PASSWORD_LOWERCASE })
+    @Matches(/(?=.*\d)/, { message: MessageEnum.swaggerExample.VALIDATION.PASSWORD_NUMBER })
+    @Matches(/(?=.*[@$!%*?&])/, { message: MessageEnum.swaggerExample.VALIDATION.PASSWORD_SPECIAL_CHAR })
     password: string;
 
     @ApiProperty({
-        // example: 'pm_1SZUubE9Ea2k0MpMFpZiBSgl',
-        example: 'pm_card_visa',
+        example: MessageEnum.swaggerExample.PAYMENT_METHOD_ID,
     })
     @IsString()
+    @IsNotEmpty()
     paymentMethodId: string;
 }

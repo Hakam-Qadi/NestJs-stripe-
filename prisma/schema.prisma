@@ -17,14 +17,15 @@ datasource db {
 }
 
 model User {
-  id          String  @id @default(uuid()) @map("id")
-  name        String?
-  email       String  @unique
-  password    String
-  refreshHash String?
+  id            String         @id @default(uuid()) @map("id")
+  name          String?
+  email         String         @unique
+  password      String
+  refreshTokens RefreshToken[]
+  refreshHash   String?
 
-  payments Payment[]
-  stripeCustomerId  String?  @unique
+  payments         Payment[]
+  stripeCustomerId String?   @unique
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -41,4 +42,15 @@ model Payment {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+// * multiple refresh tokens (multi-device)
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  device    String?
 }

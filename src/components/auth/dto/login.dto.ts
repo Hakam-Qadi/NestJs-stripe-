@@ -1,9 +1,10 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty } from "class-validator";
+import { MessageEnum } from "../../../common/enums/message.enum";
 
 export class LoginDto {
     @ApiProperty({
-        example: 'john@example.com',
+        example: MessageEnum.swaggerExample.EMAIL,
         uniqueItems: true,
     })
     @IsNotEmpty()
@@ -11,7 +12,7 @@ export class LoginDto {
     email: string;
 
     @ApiProperty({
-        example: 'StrongPass@123',
+        example: MessageEnum.swaggerExample.PASSWORD,
         minLength: 8,
     })
     @IsNotEmpty()

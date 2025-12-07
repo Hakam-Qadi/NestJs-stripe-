@@ -1,3 +1,4 @@
+import { CustomersModule } from '../customers/customers.module';
 import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -6,25 +7,26 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from '../../common/strategies/jwt.strategy';
 import { LocalStrategy } from '../../common/strategies/local.strategy';
-import { StripeService } from '../stripe/stripe.service';
 import { StripeModule } from '../stripe/stripe.module';
+import { serviceConfig } from '../../config/env.config';
 
 @Module({
   imports: [
     JwtModule.registerAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get('JWT_SECRET'),
-        signOptions: { expiresIn: '1h' },
+      useFactory: () => ({
+        secret: serviceConfig.service.jwtSecret,
+        signOptions: { expiresIn: serviceConfig.service.jwtExpiry },
       }),
     }),
     PassportModule,
     ConfigModule,
-    StripeModule
+    StripeModule,
+    CustomersModule,
   ],
 
 
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy, StripeService],
+  providers: [AuthService, LocalStrategy, JwtStrategy],
 })
 export class AuthModule { }

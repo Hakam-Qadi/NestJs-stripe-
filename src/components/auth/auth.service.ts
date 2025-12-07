@@ -1,38 +1,35 @@
-import { ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from '../../components/auth/dto/Register.dto';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { serviceConfig } from '../../config/env.config';
-import { StripeService } from '../stripe/stripe.service';
+import { MessageEnum } from '../../common/enums/message.enum';
+import { CustomersService } from '../customers/customers.service';
 
 
 @Injectable()
 export class AuthService {
+    readonly useMultipleRefreshTokens = false; // Set to true to enable multiple tokens
+
     constructor(
         private prisma: PrismaService,
         private jwtService: JwtService,
-        private stripeService: StripeService,
+        private customersService: CustomersService,
     ) { }
 
     async validateUser(email: string, password: string) {
-        try {
-            const user = await this.prisma.user.findUnique({
-                where: { email },
-                select: { id: true, name: true, email: true, password: true },
-            });
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+            select: { id: true, name: true, email: true, password: true },
+        });
 
-            if (!user) return null;
+        if (!user) throw new NotFoundException(MessageEnum.error.USER_NOT_FOUND);
 
-            const isMatch = await bcrypt.compare(password, user.password);
-            if (!isMatch) return null;
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) throw new UnauthorizedException(MessageEnum.error.INVALID_CREDENTIALS);
 
-            return user;
-
-        } catch (error) {
-            console.error('validateUser Error :: ', error);
-            throw new Error('validateUser service failed: ' + error.message);
-        }
+        return user;
     }
 
     private getAccessToken(payload: any) {
@@ -42,8 +39,8 @@ export class AuthService {
                 expiresIn: serviceConfig.service.jwtExpiry,
             });
         } catch (error) {
-            console.error('getAccessToken Error :: ', error);
-            throw new Error('getAccessToken service failed: ' + error.message);
+            console.error('getAccessToken Error :: ', error.message);
+            throw new InternalServerErrorException(MessageEnum.error.SERVER_ERROR);
         }
     }
 
@@ -54,66 +51,62 @@ export class AuthService {
                 expiresIn: serviceConfig.service.jwtRefreshExpiry,
             });
         } catch (error) {
-            console.error('getRefreshToken Error :: ', error);
-            throw new Error('getRefreshToken service failed: ' + error.message);
+            console.error('getRefreshToken Error :: ', error.message);
+            throw new InternalServerErrorException(MessageEnum.error.SERVER_ERROR);
         }
     }
 
     private async saveHashedRefreshToken(userId: string, refreshToken: string, expiresAt?: Date, device?: string) {
         try {
             const hash = await bcrypt.hash(refreshToken, 10);
-            //* single refresh token
-            await this.prisma.user.update({
-                where: { id: userId },
-                data: { refreshHash: hash },
-            });
 
-            //* multible refresh tokens (RefreshToken model)
-            // await this.prisma.refreshToken.create({
-            //     data: {
-            //         tokenHash: hash,
-            //         userId,
-            //         expiresAt: expiresAt ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            //         device,
-            //     },
-            // });
+            if (this.useMultipleRefreshTokens) {
+                //* multible refresh tokens (RefreshToken model)
+                await this.prisma.refreshToken.create({
+                    data: {
+                        tokenHash: hash,
+                        userId,
+                        expiresAt: expiresAt ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                        device,
+                    },
+                });
+            } else {
+                //* single refresh token
+                await this.prisma.user.update({
+                    where: { id: userId },
+                    data: { refreshHash: hash },
+                });
+            }
         } catch (error) {
-            console.error('saveHashedRefreshToken Error :: ', error);
-            throw new Error('saveHashedRefreshToken service failed: ' + error.message);
+            console.error('saveHashedRefreshToken Error :: ', error.message);
+            throw new InternalServerErrorException(MessageEnum.error.SERVER_ERROR);
         }
     }
 
     async generateTokens(user: any) {
-        try {
-            const payload = { id: user.id, email: user.email };
-            const token = this.getAccessToken(payload);
-            const refreshToken = this.getRefreshToken(payload);
+        const payload = { id: user.id, email: user.email };
+        const token = this.getAccessToken(payload);
+        const refreshToken = this.getRefreshToken(payload);
 
-            //* multible refresh tokens (RefreshToken model)
-            // compute expiry date from JWT_REFRESH_EXPIRY (simple approach: 7 days)
-            // const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-            // await this.saveHashedRefreshToken(user.id, refreshToken, refreshExpiry);
-
+        if (this.useMultipleRefreshTokens) {
+            //* multiple refresh tokens (RefreshToken model)
+            //* compute expiry date from JWT_REFRESH_EXPIRY (simple approach: 7 days)
+            const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            await this.saveHashedRefreshToken(user.id, refreshToken, refreshExpiry);
+        } else {
             await this.saveHashedRefreshToken(user.id, refreshToken);
-            return { token, refreshToken };
-        } catch (error) {
-            console.error('generateTokens Error :: ', error);
-            throw new Error('generateTokens service failed: ' + error.message);
         }
+
+        return { token, refreshToken };
     }
 
     async login(user: any) {
-        try {
-            const tokens = await this.generateTokens(user)
-            return {
-                token: tokens.token,
-                refreshToken: tokens.refreshToken,
-                name: user.name,
-            };
-        } catch (error) {
-            console.error('login Error :: ', error);
-            throw new Error('login service failed: ' + error.message);
-        }
+        const tokens = await this.generateTokens(user);
+        return {
+            token: tokens.token,
+            refreshToken: tokens.refreshToken,
+            name: user.name,
+        };
     }
 
     async register(dto: RegisterDto) {
@@ -122,23 +115,24 @@ export class AuthService {
         });
 
         if (existing) {
-            throw new ConflictException('Email is already registered');
+            throw new ConflictException(MessageEnum.error.EMAIL_EXISTS);
         }
 
         const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+        // Create Stripe customer first
+        const stripeCustomer = await this.customersService.createCustomer(dto);
 
         const user = await this.prisma.user.create({
             data: {
                 name: dto.name,
                 email: dto.email,
                 password: hashedPassword,
+                stripeCustomerId: stripeCustomer.id,
             },
         });
-        const tokens = await this.generateTokens(user);
 
-        if (tokens) {
-            await this.stripeService.createCustomer(dto)
-        }
+        const tokens = await this.generateTokens(user);
 
         return {
             token: tokens.token,
@@ -149,48 +143,37 @@ export class AuthService {
     }
 
     async refreshTokens(providedRefreshToken: string) {
+        // Verify signature & decode payload
+        let payload: any;
         try {
-            // Verify signature & decode payload
-            let payload: any;
-            try {
-                payload = this.jwtService.verify(providedRefreshToken, {
-                    secret: serviceConfig.service.jwtRefreshSecret,
-                });
-            } catch (err) {
-                throw new ForbiddenException('Invalid refresh token');
-            }
-
-            // Find stored hashed refresh token for user and compare
-            const user = await this.prisma.user.findUnique({
-                where: { id: payload.id },
+            payload = this.jwtService.verify(providedRefreshToken, {
+                secret: serviceConfig.service.jwtRefreshSecret,
             });
-
-            if (!user || !user.refreshHash)
-                throw new ForbiddenException('Access denied');
-
-            const isMatch = await bcrypt.compare(
-                providedRefreshToken,
-                user.refreshHash,
-            );
-
-            if (!isMatch) throw new ForbiddenException('Refresh token invalid');
-
-            // Generate new tokens
-            const tokens = await this.generateTokens(user);
-
-            // Store new hashed refresh token (rotation)
-            const hashedNewRefresh = await bcrypt.hash(tokens.refreshToken, 10);
-
-            await this.prisma.user.update({
-                where: { id: user.id },
-                data: { refreshHash: hashedNewRefresh },
-            });
-
-            return tokens;
-        } catch (error) {
-            console.error('refreshTokens Error :: ', error);
-            throw new Error('refreshTokens service failed: ' + error.message);
+        } catch (err) {
+            throw new ForbiddenException(MessageEnum.error.INVALID_REFRESH_TOKEN);
         }
 
+        // Find stored hashed refresh token for user and compare
+        const user = await this.prisma.user.findUnique({
+            where: { id: payload.id },
+        });
+
+        if (!user || !user.refreshHash) {
+            throw new ForbiddenException(MessageEnum.error.ACCESS_DENIED);
+        }
+
+        const isMatch = await bcrypt.compare(
+            providedRefreshToken,
+            user.refreshHash,
+        );
+
+        if (!isMatch) {
+            throw new ForbiddenException(MessageEnum.error.INVALID_REFRESH_TOKEN);
+        }
+
+        // Generate new tokens (this also handles token rotation)
+        const tokens = await this.generateTokens(user);
+
+        return tokens;
     }
 }

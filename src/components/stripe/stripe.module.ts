@@ -1,25 +1,32 @@
 import { Module } from '@nestjs/common';
-import { StripeService } from './stripe.service';
-import { StripeController } from './stripe.controller';
-import Stripe from 'stripe';
 import { serviceConfig } from '../../config/env.config';
-import { PaymentsModule } from '../payments/payments.module';
-import { StripeWebhookController } from './stripe.webhook.controller';
+import { StripeWebhookController } from '../webhook/webhook.controller';
+import { WebhookService } from '../webhook/webhook.service';
+import { STRIPE_CLIENT, stripeClientProvider } from './stripe.client';
+import { PaymentsService } from '../payments/payments.service';
+import { PaymentsController } from '../payments/payments.controller';
+import { JwtModule } from '@nestjs/jwt';
+
 
 @Module({
-  imports: [PaymentsModule],
-  providers: [
-    {
-      provide: 'STRIPE_CLIENT',
-      useFactory: () => {
-        return new Stripe(serviceConfig.stripe.secretKey, {
-          apiVersion: serviceConfig.stripe.apiVersion,
-        });
-      },
-    },
-    StripeService,
+  imports: [
+    JwtModule.register({
+      secret: serviceConfig.service.jwtSecret,
+      signOptions: { expiresIn: serviceConfig.service.jwtExpiry },
+    }),
   ],
-  controllers: [StripeController, StripeWebhookController],
-  exports: ['STRIPE_CLIENT'],
+  providers: [
+    stripeClientProvider,
+    PaymentsService,
+    WebhookService,
+  ],
+  controllers: [
+    PaymentsController,
+    StripeWebhookController,
+  ],
+  exports: [
+    PaymentsService,
+    STRIPE_CLIENT,
+  ],
 })
 export class StripeModule { }

@@ -4,8 +4,9 @@ import { RegisterDto } from '../../components/auth/dto/Register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ApiBody } from '@nestjs/swagger';
 import { Request, Response } from 'express';
-import { serviceConfig } from '../../config/env.config';
 import { AuthService } from './auth.service';
+import { getRefreshCookieOptions } from '../../common/utility/cookies';
+import { MessageEnum } from '../../common/enums/message.enum';
 
 @Controller('auth')
 export class AuthController {
@@ -16,13 +17,7 @@ export class AuthController {
     @ApiBody({ type: RegisterDto })
     async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
         const result = await this.authService.register(dto);
-        // set httpOnly cookie for refresh token (recommended)
-        res.cookie('refreshToken', result.refreshToken, {
-            httpOnly: true,
-            secure: serviceConfig.service.nodeEnv,
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
+        res.cookie('refreshToken', result.refreshToken, getRefreshCookieOptions());
         return { token: result.token, name: result.name, email: result.email };
     }
 
@@ -35,12 +30,7 @@ export class AuthController {
 
     async login(@Req() req: any, @Res({ passthrough: true }) res: Response) {
         const result = await this.authService.login(req.user);
-        res.cookie('refreshToken', result.refreshToken, {
-            httpOnly: true,
-            secure: serviceConfig.service.nodeEnv,
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
+        res.cookie('refreshToken', result.refreshToken, getRefreshCookieOptions());
         return { token: result.token, name: result.name };
     }
 
@@ -48,14 +38,9 @@ export class AuthController {
     async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
         // read refresh token from cookie
         const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
-        if (!refreshToken) throw new ForbiddenException('No refresh token provided');
-        const tokens = await this.authService.refreshTokens(refreshToken);
-        res.cookie('refreshToken', tokens.refreshToken, {
-            httpOnly: true,
-            secure: serviceConfig.service.nodeEnv,
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
-        return { token: tokens.token };
+        if (!refreshToken) throw new ForbiddenException(MessageEnum.error.NO_REFRESH_TOKEN_PROVIDED);
+        const result = await this.authService.refreshTokens(refreshToken);
+        res.cookie('refreshToken', result.refreshToken, getRefreshCookieOptions());
+        return { token: result.token };
     }
 }  
