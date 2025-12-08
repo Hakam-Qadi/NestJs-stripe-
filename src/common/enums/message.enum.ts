@@ -16,6 +16,9 @@ export const MessageEnum = {
     PAYMENT_NO_USER: "No user found for this Stripe customer",
     NO_REFRESH_TOKEN_PROVIDED: 'No refresh token provided.',
     WEBHOOK_SIGNATURE_FAILED: 'Webhook signature verification failed.',
+    BAD_REQUEST: 'Bad Request.',
+    PAYMENT_NOT_FOUND: 'Payment not found.',
+    PAYMENT_ALREADY_REFUNDED: 'Payment already fully refunded.',
   },
   swaggerExample: {
     EMAIL: "john@example.com",

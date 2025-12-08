@@ -32,16 +32,27 @@ model User {
 }
 
 model Payment {
-  id           String  @id @default(uuid())
-  userId       String
-  amount       Decimal
-  currency     String
-  clientSecret String
+  id                    String   @id @default(uuid())
+  userId                String
+  amount                Decimal  @db.Decimal(10, 2)
+  currency              String
+  clientSecret          String
+  stripePaymentIntentId String   @unique
+  status                String   @default("pending") // pending, succeeded, failed, refunded, partially_refunded
+  metadata              Json?    // Store order/product info
+  refundedAmount        Decimal? @db.Decimal(10, 2)
+  failureReason         String?
+  completedAt           DateTime?
+  refundedAt            DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@index([stripePaymentIntentId])
 }
 
 // * multiple refresh tokens (multi-device)
@@ -53,4 +64,22 @@ model RefreshToken {
   createdAt DateTime @default(now())
   expiresAt DateTime
   device    String?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// Store webhook events for idempotency and replay capability
+model WebhookEvent {
+  id              String    @id @default(uuid())
+  stripeEventId   String    @unique
+  eventType       String
+  payload         Json
+  processed       Boolean   @default(false)
+  processingError String?
+  createdAt       DateTime  @default(now())
+  processedAt     DateTime?
+
+  @@index([processed, createdAt])
+  @@index([eventType])
 }

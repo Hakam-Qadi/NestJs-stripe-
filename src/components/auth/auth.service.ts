@@ -120,17 +120,35 @@ export class AuthService {
 
         const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-        // Create Stripe customer first
-        const stripeCustomer = await this.customersService.createCustomer(dto);
+        let stripeCustomer;
+        let user;
 
-        const user = await this.prisma.user.create({
-            data: {
-                name: dto.name,
-                email: dto.email,
-                password: hashedPassword,
-                stripeCustomerId: stripeCustomer.id,
-            },
-        });
+        try {
+            // Create Stripe customer first
+            stripeCustomer = await this.customersService.createCustomer(dto);
+
+            // Create user in database with Stripe customer ID
+            user = await this.prisma.user.create({
+                data: {
+                    name: dto.name,
+                    email: dto.email,
+                    password: hashedPassword,
+                    stripeCustomerId: stripeCustomer.id,
+                },
+            });
+        } catch (error) {
+            // Compensation: If DB creation fails but Stripe customer was created, delete the Stripe customer
+            if (stripeCustomer && !user) {
+                try {
+                    await this.customersService.deleteCustomer(stripeCustomer.id);
+                    console.error('Rolled back Stripe customer creation due to DB error');
+                } catch (deleteError) {
+                    console.error('Failed to rollback Stripe customer:', deleteError.message);
+                    // Log this for manual cleanup - this is a critical issue
+                }
+            }
+            throw error;
+        }
 
         const tokens = await this.generateTokens(user);
 

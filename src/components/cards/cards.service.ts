@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import Stripe from "stripe";
 import { AttachCardDto } from "./dto/attach-card.dto";
+import { MessageEnum } from "src/common/enums/message.enum";
 
 @Injectable()
 export class CardsService {
@@ -25,8 +26,8 @@ export class CardsService {
             return paymentMethod;
 
         } catch (error) {
-            console.error("Error attaching card:", error);
-            throw new BadRequestException(error.message);
+            console.error("Error attaching card:", error.message);
+            throw new BadRequestException(MessageEnum.error.BAD_REQUEST);
         }
     }
 

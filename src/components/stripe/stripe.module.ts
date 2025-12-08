@@ -6,6 +6,7 @@ import { STRIPE_CLIENT, stripeClientProvider } from './stripe.client';
 import { PaymentsService } from '../payments/payments.service';
 import { PaymentsController } from '../payments/payments.controller';
 import { JwtModule } from '@nestjs/jwt';
+import { PrismaModule } from '../../../prisma/prisma.module';
 
 
 @Module({
@@ -14,6 +15,7 @@ import { JwtModule } from '@nestjs/jwt';
       secret: serviceConfig.service.jwtSecret,
       signOptions: { expiresIn: serviceConfig.service.jwtExpiry },
     }),
+    PrismaModule,
   ],
   providers: [
     stripeClientProvider,

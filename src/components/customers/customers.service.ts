@@ -37,4 +37,8 @@ export class CustomersService {
         return customer;
     }
 
+    async deleteCustomer(customerId: string) {
+        return await this.stripe.customers.del(customerId);
+    }
+
 }

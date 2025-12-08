@@ -33,13 +33,17 @@ export class PaymentsController {
     }
 
     @Post('refund')
-    async refundPayment(@Query('paymentId') paymentId: string) {
-        const refund = await this.paymentsService.refundPayment(paymentId);
+    async refundPayment(
+        @Query('paymentId') paymentId: string,
+        @Query('amount') amount?: number
+    ) {
+        const refund = await this.paymentsService.refundPayment(paymentId, amount);
 
         return {
             message: MessageEnum.error.PAYMENT_REFUNDED,
             amount: refund.amount,
             currency: refund.currency,
+            status: refund.status,
         };
     }
 }
